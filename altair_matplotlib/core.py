@@ -2,6 +2,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
 import altair
+import seaborn as sns
 
 from . import utils
 
@@ -48,8 +49,24 @@ def _defined_traits(obj):
 def _render_chart(chart):
     if chart.mark == 'line':
         return _render_line_chart(chart)
+    elif chart.mark == 'text' and 'color' in chart.to_dict()['encoding']:
+        return _render_heatmap(chart)
     else:
         raise NotImplementedError("mark = {0}".format(chart.mark))
+
+
+def _render_heatmap(chart):
+    data = utils.chart_data(chart)
+    encoding = chart.to_dict()['encoding']
+    column, row, color = [encoding[key]['field']
+                         for key in ['column', 'row', 'color']]
+    if encoding['text']['field'] not in {None, ' ', ''}:
+        kwargs = {'annot': True}
+    else:
+        kwargs = {'annot': False}
+
+    data = data.pivot_table(columns=column, index=row, values=color)
+    return sns.heatmap(data, **kwargs)
 
 
 def _render_line_chart(chart):
